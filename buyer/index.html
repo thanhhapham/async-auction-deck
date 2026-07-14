@@ -168,6 +168,40 @@
     flex-shrink: 0;
   }
 
+  .topic-block {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sub-topics {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sub-topics li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: clamp(15px, 1.3vw, 19px);
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+
+  .sub-topics li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-top: 8px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    flex-shrink: 0;
+  }
+
   .body-copy b {
     color: var(--ink);
     font-weight: 600;
@@ -626,9 +660,14 @@
       visual:
         '<ul class="topics">' +
           '<li>What type of cards will you bid on?</li>' +
-          '<li>How do you decide what price to bid?</li>' +
-          '<li>Would you want to see other bidders, or just the current price and count?</li>' +
-          '<li>Would you want to have a "Buy now" section?</li>' +
+          '<li><div class="topic-block">' +
+            '<span>How do you decide what price to bid?</span>' +
+            '<ul class="sub-topics">' +
+              '<li>Would you want to see other bidders, or just the current price and count?</li>' +
+              '<li>Would you want to have a "Buy now" section?</li>' +
+            '</ul>' +
+          '</div></li>' +
+          '<li>What is a comfortable buyer fee?</li>' +
           '<li>Auction duration: 24h, 5 days, 1 week, or something else?</li>' +
           '<li>Delivery or meetup?</li>' +
           '<li>Anything else that would make this work better for you?</li>' +
