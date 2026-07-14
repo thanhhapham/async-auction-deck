@@ -207,6 +207,19 @@
     font-weight: 600;
   }
 
+  .callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--red-wash);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-size: clamp(15px, 1.3vw, 18px);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
   .split {
     display: flex;
     align-items: center;
@@ -644,6 +657,7 @@
       title: "You win.",
       body: "Payment is charged immediately — no chasing, no back-and-forth.",
       split: true,
+      note: "💡 For raw cards, do you want to send to verification (at Carousell's partner, Oxley) after your win?",
       visual:
         '<img src="images/slide-2b-updates.png" alt="Carousell Updates page confirming the buyer won the auction and the order is confirmed">'
     },
@@ -697,11 +711,13 @@
           '<p class="cover-body">' + s.body + '</p>' +
         '</div>';
     } else if (s.split) {
+      var note = s.note ? '<div class="callout">' + s.note + '</div>' : "";
       slabEl.innerHTML =
         '<div class="split">' +
           '<div class="split-text">' +
             '<h1>' + s.title + '</h1>' +
             '<p class="body-copy">' + s.body + '</p>' +
+            note +
           '</div>' +
           '<div class="split-media">' + (s.visual || "") + '</div>' +
         '</div>';
