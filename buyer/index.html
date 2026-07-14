@@ -640,8 +640,11 @@
     },
     {
       title: "Browsing the auction.",
-      body: "Find cards currently up for bid, alongside regular listings.",
+      body: "Two ways to find:",
       split: true,
+      list:
+        '<li>Dedicated section on Explore tab</li>' +
+        '<li>Alongside regular listings in Search</li>',
       visual:
         '<img src="images/slide-3b-promote-1.png" alt="Carousell surfacing the auction listing to buyers, example 1">' +
         '<img src="images/slide-3b-promote-2.png" alt="Carousell surfacing the auction listing to buyers, example 2">'
@@ -712,11 +715,13 @@
         '</div>';
     } else if (s.split) {
       var note = s.note ? '<div class="callout">' + s.note + '</div>' : "";
+      var list = s.list ? '<ul class="sub-topics">' + s.list + '</ul>' : "";
       slabEl.innerHTML =
         '<div class="split">' +
           '<div class="split-text">' +
             '<h1>' + s.title + '</h1>' +
             '<p class="body-copy">' + s.body + '</p>' +
+            list +
             note +
           '</div>' +
           '<div class="split-media">' + (s.visual || "") + '</div>' +
