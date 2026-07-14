@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Async auctions — concept reveal (buyer)</title>
+<style>
+  :root {
+    /* Tokens pulled from carousell.sg: brand red, verified-teal, neutral scale, Roboto. */
+    --bg: #f0f1f1;
+    --stage-line: #c5c5c6;
+    --slab: #ffffff;
+    --slab-edge: #dddede;
+    --ink: #2c2c2d;
+    --ink-soft: #6d6e71;
+    --gold: #e72d3a;
+    --gold-dim: #cc1e2b;
+    --muted-on-dark: #57585a;
+    --alert: #4c0b10;
+    --positive: #00bfa2;
+    --positive-dim: #008f79;
+    --red-wash: #fff2f2;
+
+    --serif: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --sans: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    background: var(--slab);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hud {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-on-dark);
+    z-index: 5;
+  }
+
+  .hud .count {
+    font-variant-numeric: tabular-nums;
+    color: var(--gold);
+  }
+
+  .slab {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background: var(--slab);
+    padding: 64px 96px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+    overflow-y: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slab { transition: none; }
+  }
+
+  .slab.leaving { opacity: 0; transform: translateY(6px); }
+  .slab.entering { opacity: 0; transform: translateY(-6px); }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.2;
+    margin: 0;
+    color: var(--ink);
+    text-wrap: balance;
+    max-width: 60%;
+  }
+
+  .body-copy {
+    font-size: clamp(18px, 1.6vw, 24px);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 54ch;
+    margin: 0;
+  }
+
+  .cover {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 32px;
+  }
+
+  .cover-h1 {
+    font-family: var(--serif);
+    font-weight: 900;
+    font-size: clamp(44px, 6.5vw, 92px);
+    line-height: 1.08;
+    color: var(--ink);
+    text-wrap: balance;
+    max-width: 85%;
+    margin: 0;
+  }
+
+  .cover-body {
+    font-size: clamp(20px, 2vw, 28px);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  .topics {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-width: 70ch;
+  }
+
+  .topics li {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    font-size: clamp(20px, 1.8vw, 26px);
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .topics li::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    margin-top: 11px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .body-copy b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .split {
+    display: flex;
+    align-items: center;
+    gap: 56px;
+    flex: 1;
+  }
+
+  .split-text {
+    flex: 0 1 34%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .split-text h1 {
+    max-width: none;
+  }
+
+  .split-media {
+    flex: 1 1 66%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 28px;
+    min-width: 0;
+  }
+
+  .split-media img {
+    width: auto;
+    max-width: 48%;
+    height: min(78vh, 780px);
+    max-height: 78vh;
+    object-fit: contain;
+    border-radius: 16px;
+    border: 1px solid var(--slab-edge);
+    box-shadow: 0 24px 48px -28px rgba(44, 44, 45, 0.4);
+  }
+
+  .split-media img.trio {
+    max-width: 34%;
+    height: min(72vh, 680px);
+    max-height: 72vh;
+  }
+
+  /* portrait phone mock — used where no real screenshot exists yet.
+     Sized to match the real screenshots (.split-media img) so both look consistent. */
+  .phone {
+    width: auto;
+    height: min(78vh, 780px);
+    max-height: 78vh;
+    aspect-ratio: 375 / 816;
+    background: #ffffff;
+    border: 1px solid var(--slab-edge);
+    border-radius: 24px;
+    box-shadow: 0 24px 48px -28px rgba(44, 44, 45, 0.4);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .phone .ph-photo {
+    width: 100%;
+    aspect-ratio: 1 / 1.05;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #e7e2d2 0%, #cfc9b4 100%);
+  }
+
+  .phone .ph-title {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+  }
+
+  .phone .ph-sub {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: -8px;
+  }
+
+  .phone .ph-price-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .phone .ph-price {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--ink);
+  }
+
+  .phone .ph-cta {
+    margin-top: auto;
+    background: var(--gold);
+    color: #ffffff;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 13px;
+    border-radius: 10px;
+  }
+
+  .phone .ph-cta.outline {
+    background: transparent;
+    border: 1px solid var(--slab-edge);
+    color: var(--ink);
+  }
+
+  .phone .ph-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .phone .ph-balance .ph-check {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--positive);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .phone .ph-balance .amt {
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--positive-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phone .ph-balance .lbl {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .visual {
+    margin-top: 12px;
+    border: 1px solid var(--slab-edge);
+    border-radius: 8px;
+    background: var(--bg);
+    padding: 40px 44px;
+    flex: 1;
+  }
+
+  .visual:has(.channels) {
+    background: transparent;
+  }
+
+  .visual .cap {
+    font-family: var(--mono);
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+    opacity: 0.7;
+  }
+
+  .visual img {
+    display: block;
+    max-width: 100%;
+    border-radius: 4px;
+  }
+
+  /* generic wireframe rows */
+  .wire-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--slab-edge);
+    font-size: 22px;
+  }
+  .wire-row:last-child { border-bottom: none; }
+  .wire-row .k { color: var(--ink-soft); }
+  .wire-row .v {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .wire-row .v.gold { color: var(--positive-dim); }
+  .wire-row .v.flag { color: var(--alert); }
+
+  .bar-track {
+    height: 5px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--gold);
+    width: 62%;
+  }
+
+  .channels {
+    display: flex;
+    gap: 12px;
+  }
+
+  .channel {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    padding: 36px 22px 30px;
+    border: 1px solid var(--slab-edge);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+
+  .channel .range {
+    font-family: var(--mono);
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .channel .icon {
+    width: 48px;
+    height: 48px;
+    color: var(--ink-soft);
+    margin: 6px 0;
+  }
+
+  .channel .shot {
+    width: auto;
+    max-width: 100%;
+    height: 240px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--slab-edge);
+    margin: 6px auto;
+  }
+
+  .channel .name {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+  }
+
+  .channel .sub {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+
+  .channel.highlight {
+    border-color: var(--gold);
+    background: var(--red-wash);
+    box-shadow: 0 14px 28px -16px rgba(204, 30, 43, 0.35);
+    transform: translateY(-5px);
+  }
+
+  .channel.highlight .icon { color: var(--gold-dim); }
+  .channel.highlight .range { color: var(--gold-dim); font-weight: 700; }
+
+  .channel .badge {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: #ffffff;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+
+  .bignum {
+    font-family: var(--mono);
+    font-size: 96px;
+    font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .dots {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 7px;
+    z-index: 5;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d5d5d6;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .dot.active { background: var(--gold); transform: scale(1.3); }
+
+  .navzone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    z-index: 2;
+  }
+  .navzone.prev { left: 0; cursor: w-resize; }
+  .navzone.next { right: 0; cursor: e-resize; }
+
+  .arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--stage-line);
+    color: var(--muted-on-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    z-index: 6;
+    background: #ffffff;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+  }
+  .arrow:hover { opacity: 1; border-color: var(--gold-dim); color: var(--gold-dim); }
+  .arrow.prev { left: 44px; }
+  .arrow.next { right: 44px; }
+  .arrow.disabled { opacity: 0.15; pointer-events: none; }
+
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage" tabindex="0">
+  <div class="hud">
+    <span class="count"><span id="hud-current">01</span> / <span id="hud-total">07</span></span>
+  </div>
+
+  <div class="navzone prev" id="zone-prev" aria-hidden="true"></div>
+  <div class="navzone next" id="zone-next" aria-hidden="true"></div>
+
+  <div class="slab" id="slab"></div>
+
+  <button class="arrow prev" id="btn-prev" aria-label="Previous slide">&#8592;</button>
+  <button class="arrow next" id="btn-next" aria-label="Next slide">&#8594;</button>
+
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+(function () {
+  var slides = [
+    {
+      title: "This is a working idea.",
+      body: "We want to design this experience with you. Nothing is final yet. Share your reaction as we go.",
+      cover: true
+    },
+    {
+      title: "A new way to bid on $100–$1,000 graded slabs.",
+      body: "Alongside livestreams and regular listings.",
+      visual:
+        '<div class="channels">' +
+          '<div class="channel">' +
+            '<div class="range">Below $100</div>' +
+            '<img class="shot" src="images/slide-1-cleffa.jpg" alt="Cleffa card, an example of a low-value card sold on livestream">' +
+            '<div class="name">Livestream</div>' +
+            '<div class="sub">Fast, watch and buy now</div>' +
+          '</div>' +
+          '<div class="channel highlight">' +
+            '<span class="badge">💡 A working idea</span>' +
+            '<div class="range">$100 – $1,000</div>' +
+            '<img class="shot" src="images/slide-1-psyduck.jpeg" alt="Psyduck card, an example of a mid-value card sold via async auction">' +
+            '<div class="name">Async auction</div>' +
+            '<div class="sub">Multi-day, bid at your pace</div>' +
+          '</div>' +
+          '<div class="channel">' +
+            '<div class="range">Above $1,000</div>' +
+            '<img class="shot" src="images/slide-1-red-pikachu.jpg" alt="Red Pikachu card, an example of a high-value card sold via regular listing">' +
+            '<div class="name">Regular listings</div>' +
+            '<div class="sub">Browse and buy anytime</div>' +
+          '</div>' +
+        '</div>'
+    },
+    {
+      title: "You're already doing this (on Kyo, Telegram, eBay). We want to make it better.",
+      body: "Fixed close times. Every bid is binding. Payment is charged the moment you win — no chasing a seller after you've paid.",
+      split: true,
+      visual:
+        '<img src="images/slide-2a-listing.png" alt="Carousell listing page showing an active bid, countdown timer, and Place bid button">' +
+        '<img src="images/slide-2b-updates.png" alt="Carousell Updates page confirming the buyer won the auction and the order is confirmed">'
+    },
+    {
+      title: "Browsing the auction.",
+      body: "Find cards currently up for bid, alongside regular listings.",
+      split: true,
+      visual:
+        '<img src="images/explore-tab-current-auction-crop.png" alt="Carousell Explore tab showing a current auction with countdown timer">'
+    },
+    {
+      title: "Placing your bid.",
+      body: "See the current price, bid count, and time left. Not who else is bidding. Every bid is binding.",
+      split: true,
+      visual:
+        '<img src="images/slide-2a-listing.png" alt="Carousell listing page during the auction window, showing current bid, countdown timer, and Place bid button">'
+    },
+    {
+      title: "You win.",
+      body: "Payment is charged immediately — no chasing, no back-and-forth.",
+      split: true,
+      visual:
+        '<img src="images/slide-2b-updates.png" alt="Carousell Updates page confirming the buyer won the auction and the order is confirmed">'
+    },
+    {
+      title: "If you don't win.",
+      body: "No charge. Browse the next batch, or check regular listings.",
+      split: true,
+      visual:
+        '<img src="images/slide-3a-before-auction.png" alt="Carousell regular listing page for browsing after an auction">'
+    },
+    {
+      title: "How can this work better for you?",
+      body: "",
+      visual:
+        '<ul class="topics">' +
+          '<li>What cards would you want to bid on?</li>' +
+          '<li>How would you decide your maximum bid?</li>' +
+          '<li>Auction duration: 24h, 5 days, 1 week, or something else?</li>' +
+          '<li>Would you want to see other bidders, or just the current price and count?</li>' +
+          '<li>Delivery or meetup?</li>' +
+        '</ul>'
+    }
+  ];
+
+  var current = 0;
+  var slabEl = document.getElementById("slab");
+  var dotsEl = document.getElementById("dots");
+  var hudCurrent = document.getElementById("hud-current");
+  var hudTotal = document.getElementById("hud-total");
+  var btnPrev = document.getElementById("btn-prev");
+  var btnNext = document.getElementById("btn-next");
+
+  hudTotal.textContent = String(slides.length).padStart(2, "0");
+
+  slides.forEach(function (_, i) {
+    var d = document.createElement("div");
+    d.className = "dot" + (i === 0 ? " active" : "");
+    dotsEl.appendChild(d);
+  });
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function render() {
+    var s = slides[current];
+
+    if (s.cover) {
+      slabEl.innerHTML =
+        '<div class="cover">' +
+          '<h1 class="cover-h1">' + s.title + '</h1>' +
+          '<p class="cover-body">' + s.body + '</p>' +
+        '</div>';
+    } else if (s.split) {
+      slabEl.innerHTML =
+        '<div class="split">' +
+          '<div class="split-text">' +
+            '<h1>' + s.title + '</h1>' +
+            '<p class="body-copy">' + s.body + '</p>' +
+          '</div>' +
+          '<div class="split-media">' + (s.visual || "") + '</div>' +
+        '</div>';
+    } else {
+      var visualBlock = s.visual ? '<div class="visual">' + s.visual + '</div>' : "";
+      slabEl.innerHTML =
+        '<h1>' + s.title + '</h1>' +
+        '<p class="body-copy">' + s.body + '</p>' +
+        visualBlock;
+    }
+
+    hudCurrent.textContent = pad(current + 1);
+
+    Array.prototype.forEach.call(dotsEl.children, function (d, i) {
+      d.className = "dot" + (i === current ? " active" : "");
+    });
+
+    btnPrev.classList.toggle("disabled", current === 0);
+    btnNext.classList.toggle("disabled", current === slides.length - 1);
+  }
+
+  function go(delta) {
+    var next = current + delta;
+    if (next < 0 || next >= slides.length) return;
+    current = next;
+    render();
+  }
+
+  document.getElementById("zone-prev").addEventListener("click", function () { go(-1); });
+  document.getElementById("zone-next").addEventListener("click", function () { go(1); });
+  btnPrev.addEventListener("click", function (e) { e.stopPropagation(); go(-1); });
+  btnNext.addEventListener("click", function (e) { e.stopPropagation(); go(1); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === " ") { go(1); }
+    if (e.key === "ArrowLeft") { go(-1); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
